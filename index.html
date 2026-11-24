@@ -1,0 +1,872 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Groove Mode Ticket Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,600;0,800;1,800;1,900&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one narrow column, tabbed desk (Issue / Gate / Register), built for a phone held at the door. */
+:root {
+  --bg: #0b0708;
+  --panel: #150d0f;
+  --panel-2: #1e1215;
+  --line: #3a1a20;
+  --fg: #f3eeee;
+  --muted: #a99ea1;
+  --red: #e5192f;
+  --red-deep: #9d0f1f;
+  --silver: #d9dbe1;
+  --ok: #2ccb85;
+  --ok-bg: #0e2a1f;
+  --warn: #f2b632;
+  --warn-bg: #2d2208;
+  --bad: #ff5566;
+  --bad-bg: #2f0d12;
+  --font-display: "Archivo", "Arial Black", system-ui, sans-serif;
+  --font-body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  background-image: radial-gradient(900px 420px at 85% -10%, rgba(229,25,47,.22), transparent 70%), radial-gradient(600px 380px at -10% 30%, rgba(157,15,31,.18), transparent 70%);
+  background-repeat: no-repeat;
+  color: var(--fg);
+  font: 15px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 56px;
+  min-height: 100vh;
+}
+.wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+h1, h2, h3, p { margin: 0; }
+header.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.mark { font: italic 900 clamp(34px, 9vw, 52px)/0.9 var(--font-display); letter-spacing: -.01em; text-transform: uppercase; }
+.mark .g { background: linear-gradient(180deg, #fff 0%, #cfd1d8 55%, #7e818c 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.mark .m { color: var(--red); display: block; margin-top: 2px; }
+.sub { color: var(--muted); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; }
+.sync { font: 500 11px var(--font-mono); color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.sync.live::before { background: var(--ok); box-shadow: 0 0 0 3px rgba(44,203,133,.2); }
+.sync.local::before { background: var(--warn); }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.card h2 { font: italic 800 20px/1.1 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
+.card h3 { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.hint { color: var(--muted); font-size: 13px; }
+
+.keybar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); font-size: 13px; color: var(--muted); }
+.keybar b { color: var(--fg); font-family: var(--font-mono); letter-spacing: .08em; }
+.keybar .ok { color: var(--ok); }
+
+nav.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 5px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+nav.tabs button { font: italic 800 14px var(--font-display); text-transform: uppercase; letter-spacing: .06em; padding: 12px 6px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); cursor: pointer; }
+nav.tabs button[aria-selected="true"] { background: var(--red); color: #fff; }
+nav.tabs button:focus-visible, .btn:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--silver); outline-offset: 2px; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid .full { grid-column: 1 / -1; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field label { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+input, select { width: 100%; min-width: 0; font: 16px var(--font-body); color: var(--fg); background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 12px; }
+input::placeholder { color: #6f6366; }
+input.mono { font-family: var(--font-mono); letter-spacing: .06em; }
+.btn { font: italic 800 15px var(--font-display); text-transform: uppercase; letter-spacing: .05em; border: 1px solid var(--red); background: var(--red); color: #fff; padding: 13px 18px; border-radius: 10px; cursor: pointer; }
+.btn:hover { background: #f02a40; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--fg); border-color: var(--line); }
+.btn.ghost:hover { border-color: var(--silver); background: var(--panel-2); }
+.btn.small { padding: 8px 12px; font-size: 12px; }
+.btn.danger { border-color: var(--bad); color: var(--bad); background: transparent; }
+.btn.danger.armed { background: var(--bad); color: #1a0508; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.err { color: var(--bad); font-size: 13px; min-height: 1em; }
+.note { border: 1px solid var(--warn); background: var(--warn-bg); color: #f6dca1; border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+
+.issued { border: 1px solid var(--ok); background: var(--ok-bg); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.issued h3 { color: var(--ok); }
+.serials { display: flex; flex-wrap: wrap; gap: 8px; }
+.serial { font: 700 14px var(--font-mono); letter-spacing: .08em; background: var(--bg); border: 1px solid var(--line); padding: 6px 10px; border-radius: 8px; }
+
+.scanbox { display: flex; gap: 10px; flex-wrap: wrap; }
+.scanbox input { flex: 1 1 240px; }
+.result { border-radius: 14px; border: 2px solid var(--line); padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.result .big { font: italic 900 clamp(30px, 9vw, 46px)/1 var(--font-display); text-transform: uppercase; }
+.result.valid { border-color: var(--ok); background: var(--ok-bg); } .result.valid .big { color: var(--ok); }
+.result.used, .result.void, .result.forged, .result.invalid { border-color: var(--bad); background: var(--bad-bg); } .result.used .big, .result.void .big, .result.forged .big, .result.invalid .big { color: var(--bad); }
+.result.unknown, .result.manual { border-color: var(--warn); background: var(--warn-bg); } .result.unknown .big, .result.manual .big { color: var(--warn); }
+.result.admitted { border-color: var(--ok); background: var(--ok-bg); } .result.admitted .big { color: var(--ok); }
+dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+dl.facts dt { color: var(--muted); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; align-self: center; }
+dl.facts dd { margin: 0; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+dl.facts dd.name { font: italic 800 22px/1.1 var(--font-display); text-transform: uppercase; }
+.fp { display: inline-flex; gap: 3px; vertical-align: middle; }
+.fp i { width: 11px; height: 11px; display: block; border-radius: 2px; }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.stat b { display: block; font: italic 900 24px/1.1 var(--font-display); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stat span { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.list { display: flex; flex-direction: column; gap: 8px; }
+.t { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+.t .who { min-width: 0; }
+.t .who b { display: block; overflow-wrap: anywhere; }
+.t .who small { color: var(--muted); font-size: 12px; }
+.t .sn { font: 700 12px var(--font-mono); letter-spacing: .08em; color: var(--silver); }
+.t .acts { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+.pill { font: 800 11px var(--font-display); letter-spacing: .1em; text-transform: uppercase; padding: 4px 9px; border-radius: 99px; border: 1px solid; white-space: nowrap; }
+.pill.valid { color: var(--silver); border-color: var(--silver); }
+.pill.used { color: var(--ok); border-color: var(--ok); }
+.pill.void { color: var(--bad); border-color: var(--bad); }
+.empty { text-align: center; padding: 26px 10px; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; }
+details { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--panel); }
+details summary { cursor: pointer; font: italic 800 14px var(--font-display); text-transform: uppercase; letter-spacing: .05em; }
+details ul { margin: 10px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 14px; }
+details li b { color: var(--fg); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--silver); color: #120a0c; padding: 10px 16px; border-radius: 10px; font-weight: 600; max-width: calc(100% - 32px); z-index: 20; }
+@media (max-width: 560px) {
+  .grid { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .result, .issued { animation: pop .18s ease-out; }
+  @keyframes pop { from { transform: scale(.985); opacity: .5; } to { transform: none; opacity: 1; } }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 class="mark"><span class="g">Groove</span><span class="m">Mode</span></h1>
+      <p class="sub">Ticket desk &middot; Sat 5 Dec 2026 &middot; Kampala</p>
+    </div>
+    <div class="sync" id="sync" role="status">Loading register&hellip;</div>
+  </header>
+
+  <section class="card" id="setup" hidden>
+    <h2>Set your signing key</h2>
+    <p class="hint">This private phrase signs every ticket, so fake tickets can be spotted. Enter the same phrase on your co-host's phone. Never post it anywhere.</p>
+    <div class="field">
+      <label for="keyin">Signing key (8+ characters)</label>
+      <input id="keyin" type="password" autocomplete="off" placeholder="A phrase only you two know">
+    </div>
+    <div class="row"><button class="btn" id="keysave" type="button">Save key</button><span class="err" id="keyerr"></span></div>
+  </section>
+  <div class="keybar" id="keybar" hidden>
+    <span><span class="ok">Signing key active.</span> Key check <b id="kcheck">----</b> (must match on every phone)</span>
+    <button class="btn ghost small" id="keychange" type="button">Change key</button>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Ticket desk">
+    <button role="tab" id="tab-issue" data-tab="issue" aria-selected="true">Issue</button>
+    <button role="tab" id="tab-gate" data-tab="gate" aria-selected="false">Gate</button>
+    <button role="tab" id="tab-register" data-tab="register" aria-selected="false">Register</button>
+  </nav>
+
+  <section id="view-issue" class="card" role="tabpanel">
+    <h2>Issue a ticket</h2>
+    <p class="hint">Confirm the payment first, then fill this in. The PDF is saved to the phone and the ticket goes into the register.</p>
+    <form id="form" class="grid" autocomplete="off">
+      <div class="field full"><label for="f-name">Guest name</label><input id="f-name" placeholder="Name as on their ID" maxlength="60"></div>
+      <div class="field"><label for="f-phone">Phone (WhatsApp)</label><input id="f-phone" inputmode="tel" placeholder="07XX XXX XXX" maxlength="20"></div>
+      <div class="field"><label for="f-type">Ticket type</label>
+        <select id="f-type"><option value="R">Regular (admits 1)</option><option value="V">VIP (admits 1)</option><option value="C">Couple (admits 2)</option></select></div>
+      <div class="field"><label for="f-qty">How many tickets</label><input id="f-qty" type="number" inputmode="numeric" min="1" max="10" value="1"></div>
+      <div class="field"><label for="f-amount">Paid per ticket (UGX)</label><input id="f-amount" type="number" inputmode="numeric" min="0" step="500" placeholder="e.g. 30000"></div>
+      <div class="field"><label for="f-method">Payment method</label>
+        <select id="f-method"><option>MTN MoMo</option><option>Airtel Money</option><option>Bank transfer</option><option>Cash</option></select></div>
+      <div class="field"><label for="f-ref">Transaction ID</label><input id="f-ref" class="mono" placeholder="From the SMS receipt" maxlength="40"></div>
+      <div class="field full"><label for="f-venue">Venue line on ticket (optional)</label><input id="f-venue" placeholder="Leave empty until the location is announced"></div>
+      <div class="full row"><button class="btn" id="issue" type="submit">Issue ticket</button><button class="btn ghost" id="sample" type="button">Preview sample PDF</button></div>
+      <div class="full err" id="issueerr" role="alert"></div>
+    </form>
+    <div id="issued"></div>
+    <details>
+      <summary>How tickets are protected</summary>
+      <ul>
+        <li><b>Random serial.</b> 8 characters drawn from about 850 billion combinations, so nobody can guess a valid one.</li>
+        <li><b>Signed QR.</b> The QR carries an auth code made from your private key. A ticket made without the key fails at the gate.</li>
+        <li><b>Register check.</b> Every ticket is in the register. The gate shows the holder's name to compare with their ID.</li>
+        <li><b>One entry.</b> The first scan marks the ticket used. A screenshot shared with friends shows "Already used" with the time.</li>
+        <li><b>Transaction ID check.</b> A payment ID that already has a ticket is flagged before a second one is issued.</li>
+        <li><b>Visual fingerprint.</b> The 16 coloured squares and wave pattern on each ticket are unique and show on the gate screen too.</li>
+        <li><b>Void.</b> Cancel a refunded or lost ticket from the Register. It stops working at once.</li>
+        <li><b>Keep the key private.</b> Anyone who has it can create valid tickets.</li>
+      </ul>
+    </details>
+  </section>
+
+  <section id="view-gate" class="card" role="tabpanel" hidden>
+    <h2>Gate check</h2>
+    <p class="hint">Scan with a Bluetooth or USB scanner, paste the QR text, type the serial, or photograph the QR.</p>
+    <form id="gateform" class="scanbox" autocomplete="off">
+      <input id="gatein" class="mono" placeholder="GM1.XXXXXXXX.R.XXXXXXXX or GM-XXXX-XXXX" autocapitalize="characters" spellcheck="false">
+      <button class="btn" type="submit">Check</button>
+    </form>
+    <div class="row">
+      <label class="btn ghost small" for="photo" style="cursor:pointer">Photograph QR</label>
+      <input id="photo" type="file" accept="image/*" capture="environment" hidden>
+      <span class="hint">Opens the camera on a phone.</span>
+    </div>
+    <div id="gateout"></div>
+  </section>
+
+  <section id="view-register" class="card" role="tabpanel" hidden>
+    <h2>Register</h2>
+    <div class="stats" id="stats"></div>
+    <div class="row"><input id="q" placeholder="Search name, serial, phone or transaction ID" style="flex:1 1 240px"><button class="btn ghost small" id="csv" type="button">Export CSV</button></div>
+    <div id="regnote"></div>
+    <div class="list" id="list"></div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+/* Groove Mode ticket core: codes, signatures, PDF drawing. No DOM use. */
+const GM = (function () {
+  const CFG = {
+    event: 'GROOVE MODE',
+    dateLine: 'SATURDAY 5TH DECEMBER 2026',
+    city: 'KAMPALA, UGANDA',
+    defaultVenue: 'Location to be announced',
+    contact: '0709119359',
+    tagline: 'DANCE  ·  VIBE  ·  ENJOY',
+  };
+  const TYPES = {
+    R: { label: 'Regular', admits: 1 },
+    V: { label: 'VIP', admits: 1 },
+    C: { label: 'Couple', admits: 2 },
+  };
+  const ALPHA = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'; // no 0 O 1 I L
+  const FP_COLORS = [[229, 25, 47], [243, 238, 238], [122, 12, 24], [140, 143, 153]];
+
+  function randomSerial() {
+    const buf = new Uint8Array(8);
+    crypto.getRandomValues(buf);
+    let s = '';
+    for (const b of buf) s += ALPHA[b % ALPHA.length];
+    return s;
+  }
+  const fmtSerial = (s) => 'GM-' + s.slice(0, 4) + '-' + s.slice(4);
+  const fmtCode = (c) => c.slice(0, 4) + '-' + c.slice(4);
+
+  async function hmacBytes(key, msg) {
+    const enc = new TextEncoder();
+    const k = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    return new Uint8Array(await crypto.subtle.sign('HMAC', k, enc.encode(msg)));
+  }
+  async function sign(key, serial, type) {
+    const bytes = await hmacBytes(key, 'GM1|' + serial + '|' + type);
+    let code = '';
+    for (let i = 0; i < 8; i++) code += ALPHA[bytes[i] % ALPHA.length];
+    return { code, bytes };
+  }
+  async function keyCheck(key) {
+    const b = await hmacBytes(key, 'GM1|KEYCHECK');
+    let c = '';
+    for (let i = 0; i < 4; i++) c += ALPHA[b[i] % ALPHA.length];
+    return c;
+  }
+  const payload = (serial, type, code) => 'GM1.' + serial + '.' + type + '.' + code;
+
+  function allIn(s) {
+    for (const ch of s) if (ALPHA.indexOf(ch) < 0) return false;
+    return true;
+  }
+  /* Accepts a full QR payload or just a typed serial like GM-7K2Q-9XPD. */
+  function parse(text) {
+    const t = String(text || '').trim();
+    if (!t) return null;
+    if (/^GM1\./i.test(t)) {
+      const p = t.toUpperCase().split('.');
+      if (p.length !== 4) return null;
+      const [, serial, type, sig] = p;
+      if (serial.length !== 8 || !allIn(serial)) return null;
+      if (!TYPES[type]) return null;
+      if (sig.length !== 8 || !allIn(sig)) return null;
+      return { serial, type, sig, manual: false };
+    }
+    let s = t.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (s.startsWith('GM') && s.length === 10) s = s.slice(2);
+    if (s.length !== 8 || !allIn(s)) return null;
+    return { serial: s, type: null, sig: null, manual: true };
+  }
+  function fingerprint(bytes) {
+    const out = [];
+    for (let i = 8; i < 12; i++) for (let j = 0; j < 4; j++) out.push((bytes[i] >> (j * 2)) & 3);
+    return out; // 16 swatches
+  }
+
+  /* ---------- PDF ---------- */
+  const W = 100, H = 230;
+  const clean = (s) => String(s || '').replace(/[^\x20-\xFF]/g, '').trim();
+  const money = (n) => 'UGX ' + Number(n).toLocaleString('en-US');
+  function fmtWhen(iso) {
+    try {
+      return new Date(iso).toLocaleString('en-GB', {
+        timeZone: 'Africa/Kampala', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      }) + ' EAT';
+    } catch (e) { return iso; }
+  }
+  function fit(doc, str, maxW, size, min) {
+    let s = size;
+    doc.setFontSize(s);
+    while (s > min && doc.getTextWidth(str) > maxW) { s -= 0.5; doc.setFontSize(s); }
+    return s;
+  }
+  function spaced(doc, str, cx, y, sp) {
+    let w = 0;
+    for (const ch of str) w += doc.getTextWidth(ch) + sp;
+    w -= sp;
+    let x = cx - w / 2;
+    for (const ch of str) { doc.text(ch, x, y); x += doc.getTextWidth(ch) + sp; }
+  }
+  function micro(doc, y, unit, x0, x1, size) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(size);
+    let s = unit;
+    while (doc.getTextWidth(s) < x1 - x0) s += unit;
+    while (doc.getTextWidth(s) > x1 - x0) s = s.slice(0, -1);
+    doc.text(s, x0, y);
+  }
+  function weave(doc, bytes) {
+    doc.setDrawColor(229, 25, 47);
+    doc.setLineWidth(0.12);
+    doc.setGState(new doc.GState({ opacity: 0.15 }));
+    const n = 13;
+    for (let i = 0; i < n; i++) {
+      const b0 = bytes[(i * 2) % 32], b1 = bytes[(i * 2 + 1) % 32], b2 = bytes[(i + 11) % 32];
+      const amp = 2.5 + (b0 / 255) * 8;
+      const freq = 0.035 + (b1 / 255) * 0.08;
+      const ph = (b2 / 255) * Math.PI * 2;
+      const base = (i + 0.5) * (H / n);
+      const lines = [];
+      let px = 0, py = base + amp * Math.sin(ph);
+      for (let x = 1; x <= W; x++) {
+        const y = base + amp * Math.sin(2 * Math.PI * freq * x + ph) + amp * 0.45 * Math.sin(2 * Math.PI * freq * 2.7 * x + ph * 1.7);
+        lines.push([1, y - py]);
+        py = y;
+      }
+      doc.lines(lines, 0, base + amp * Math.sin(ph), [1, 1], 'S', false);
+    }
+    doc.setGState(new doc.GState({ opacity: 1 }));
+  }
+  function glow(doc, cx, cy, r) {
+    doc.setFillColor(229, 25, 47);
+    for (let i = 12; i >= 1; i--) {
+      doc.setGState(new doc.GState({ opacity: 0.028 }));
+      doc.circle(cx, cy, (r * i) / 12, 'F');
+    }
+    doc.setGState(new doc.GState({ opacity: 1 }));
+  }
+
+  function drawTicket(doc, deps, t, auth) {
+    const qrText = payload(t.serial, t.type, auth.code);
+    const type = TYPES[t.type];
+    const cx = W / 2;
+
+    doc.setFillColor(10, 6, 7);
+    doc.rect(0, 0, W, H, 'F');
+    glow(doc, 18, 8, 46);
+    glow(doc, 92, 110, 40);
+    weave(doc, auth.bytes);
+
+    // frame
+    doc.setDrawColor(229, 25, 47);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(3.5, 3.5, W - 7, H - 7, 3, 3, 'S');
+    doc.setLineWidth(0.15);
+    doc.setDrawColor(215, 217, 223);
+    doc.roundedRect(5, 5, W - 10, H - 10, 2.2, 2.2, 'S');
+
+    // header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6);
+    doc.setTextColor(185, 185, 192);
+    spaced(doc, 'OFFICIAL ENTRY TICKET', cx, 14, 0.7);
+
+    // title
+    doc.setFont('helvetica', 'bolditalic');
+    const sg = fit(doc, 'GROOVE', 80, 50, 20);
+    doc.setTextColor(70, 70, 76);
+    doc.text('GROOVE', cx + 0.7, 34.7, { align: 'center' });
+    doc.setTextColor(232, 233, 238);
+    doc.text('GROOVE', cx, 34, { align: 'center' });
+    doc.setFontSize(sg);
+    const sm = fit(doc, 'MODE', 74, 62, 20);
+    doc.setTextColor(120, 10, 22);
+    doc.text('MODE', cx + 0.7, 54.7, { align: 'center' });
+    doc.setTextColor(229, 25, 47);
+    doc.text('MODE', cx, 54, { align: 'center' });
+    doc.setDrawColor(229, 25, 47);
+    doc.setLineWidth(1.1);
+    doc.line(20, 59.5, 80, 57.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(185, 185, 192);
+    spaced(doc, CFG.tagline, cx, 67, 0.5);
+
+    // date and place
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(243, 238, 238);
+    fit(doc, CFG.dateLine, 84, 11.5, 7);
+    doc.text(CFG.dateLine, cx, 79, { align: 'center' });
+    doc.setDrawColor(229, 25, 47);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(24, 83, 52, 8, 4, 4, 'S');
+    doc.setFontSize(8.5);
+    doc.setTextColor(243, 238, 238);
+    spaced(doc, CFG.city, cx, 88.2, 0.6);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(185, 185, 192);
+    doc.text(clean(t.venue) || CFG.defaultVenue, cx, 96.5, { align: 'center' });
+
+    // micro rule
+    doc.setTextColor(150, 60, 70);
+    micro(doc, 102, CFG.event + ' ' + t.serial + ' ', 9, W - 9, 2.2);
+
+    // type badge
+    const badge = type.label.toUpperCase() + '  ·  ADMITS ' + type.admits;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    const bw = Math.max(46, doc.getTextWidth(badge) + badge.length * 0.3 + 12);
+    doc.setFillColor(229, 25, 47);
+    doc.roundedRect(cx - bw / 2, 106, bw, 9, 1.6, 1.6, 'F');
+    doc.setTextColor(255, 255, 255);
+    spaced(doc, badge, cx, 112, 0.3);
+
+    // holder
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.5);
+    doc.setTextColor(150, 150, 158);
+    spaced(doc, 'TICKET HOLDER', cx, 123, 0.6);
+    doc.setFont('helvetica', 'bold');
+    const nm = clean(t.name).toUpperCase();
+    fit(doc, nm, 82, 16, 8);
+    doc.setTextColor(255, 255, 255);
+    doc.text(nm, cx, 131, { align: 'center' });
+    const bits = [];
+    if (t.amount) bits.push(money(t.amount));
+    if (t.method) bits.push(clean(t.method));
+    if (t.ref) bits.push('Ref ' + '••••' + clean(t.ref).slice(-4));
+    if (bits.length) {
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(185, 185, 192);
+      fit(doc, bits.join('  ·  '), 84, 6.8, 4.5);
+      doc.text(bits.join('  ·  '), cx, 137.5, { align: 'center' });
+    }
+    doc.setFontSize(5.5);
+    doc.setTextColor(130, 130, 138);
+    doc.text('Issued ' + fmtWhen(t.issuedAt), cx, 142, { align: 'center' });
+
+    // QR panel
+    const px = 24, py = 146, ps = 52;
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(px, py, ps, ps, 2.5, 2.5, 'F');
+    const qr = deps.qrcode(0, 'M');
+    qr.addData(qrText);
+    qr.make();
+    const n = qr.getModuleCount();
+    const qs = 42;
+    const m = qs / n;
+    const qx = px + (ps - qs) / 2, qy = py + (ps - qs) / 2;
+    doc.setFillColor(10, 6, 7);
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (qr.isDark(r, c)) doc.rect(qx + c * m, qy + r * m, m + 0.02, m + 0.02, 'F');
+      }
+    }
+
+    // serial, auth code, fingerprint
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(255, 255, 255);
+    spaced(doc, fmtSerial(t.serial), cx, 205, 0.35);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(185, 185, 192);
+    spaced(doc, 'AUTH CODE  ' + fmtCode(auth.code), cx, 210, 0.35);
+    const fp = fingerprint(auth.bytes);
+    const sw = 2.6, gap = 0.9, total = fp.length * sw + (fp.length - 1) * gap;
+    let fx = cx - total / 2;
+    for (const v of fp) {
+      doc.setFillColor(...FP_COLORS[v]);
+      doc.rect(fx, 212, sw, 2.2, 'F');
+      fx += sw + gap;
+    }
+    doc.setFontSize(4.4);
+    doc.setTextColor(130, 130, 138);
+    doc.text('Valid for one entry only. Non-transferable. Void if altered. Questions: WhatsApp ' + CFG.contact, cx, 221, { align: 'center' });
+    doc.setTextColor(150, 60, 70);
+    micro(doc, 8.6, 'VALID ' + t.serial + ' ', 9, W - 9, 2.2);
+
+    doc.setTextColor(150, 60, 70);
+    micro(doc, 224.4, 'GROOVE MODE 05.12.2026 ' + t.serial + ' ', 9, W - 9, 2.2);
+
+    if (t.sample) {
+      doc.setGState(new doc.GState({ opacity: 0.5 }));
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(30);
+      doc.setTextColor(255, 255, 255);
+      doc.text('SAMPLE', cx, 120, { align: 'center', angle: 35 });
+      doc.setFontSize(12);
+      doc.text('NOT VALID FOR ENTRY', cx + 4, 132, { align: 'center', angle: 35 });
+      doc.setGState(new doc.GState({ opacity: 1 }));
+    }
+  }
+
+  async function buildPdf(deps, tickets, key) {
+    const doc = new deps.jsPDF({ unit: 'mm', format: [W, H], orientation: 'portrait', compress: true });
+    doc.setProperties({
+      title: 'Groove Mode ticket ' + tickets.map((t) => fmtSerial(t.serial)).join(', '),
+      subject: CFG.event + ' ' + CFG.dateLine,
+      author: 'Groove Mode',
+      keywords: tickets.map((t) => t.serial).join(','),
+    });
+    for (let i = 0; i < tickets.length; i++) {
+      if (i > 0) doc.addPage([W, H], 'portrait');
+      const auth = await sign(key, tickets[i].serial, tickets[i].type);
+      drawTicket(doc, deps, tickets[i], auth);
+    }
+    return doc.output('arraybuffer');
+  }
+
+  return { CFG, TYPES, ALPHA, FP_COLORS, randomSerial, fmtSerial, fmtCode, sign, keyCheck, payload, parse, fingerprint, buildPdf, fmtWhen, money };
+})();
+
+
+</script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, props, ...kids) => {
+    const n = document.createElement(tag);
+    if (props) for (const k in props) {
+      if (k === 'class') n.className = props[k];
+      else if (k === 'text') n.textContent = props[k];
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), props[k]);
+      else n.setAttribute(k, props[k]);
+    }
+    for (const c of kids) if (c != null) n.append(c);
+    return n;
+  };
+  const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+
+  let KEY = lsGet('gm_key') || '';
+  let tickets = new Map();
+  let store = null;
+  let downloads = null;
+  let lastPdf = null;
+  let dupOverride = '';
+  let toastTimer = 0;
+
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+  }
+
+  /* ---------- storage: shared db when available, otherwise this browser ---------- */
+  function localStore(onChange) {
+    let data = {};
+    try { data = JSON.parse(lsGet('gm_tickets') || '{}'); } catch (e) { data = {}; }
+    const save = () => lsSet('gm_tickets', JSON.stringify(data));
+    const emit = () => onChange(Object.values(data));
+    setTimeout(emit, 0);
+    return {
+      mode: 'local',
+      async set(t) { data[t.serial] = t; save(); emit(); },
+      async update(serial, patch) { data[serial] = Object.assign({}, data[serial], patch); save(); emit(); },
+      async claim(serial) {
+        const cur = data[serial];
+        if (!cur || cur.status !== 'valid') return { ok: false, cur };
+        data[serial] = Object.assign({}, cur, { status: 'used', usedAt: new Date().toISOString() });
+        save(); emit();
+        return { ok: true, cur: data[serial] };
+      },
+    };
+  }
+  async function dbStore(db, onChange, onError) {
+    const col = db.collection('tickets');
+    let timer = setTimeout(() => setSync('local', 'Cannot reach shared register yet'), 10000);
+    col.onSnapshot((snap) => {
+      if (!snap.metadata.fromCache) { clearTimeout(timer); setSync('live', 'Shared register live'); }
+      onChange(snap.docs.map((d) => d.data()));
+    }, (e) => { clearTimeout(timer); onError(e); });
+    return {
+      mode: 'db',
+      async set(t) { await col.doc(t.serial).set(t); },
+      async update(serial, patch) { await col.doc(serial).update(patch); },
+      async claim(serial) {
+        const ref = col.doc(serial);
+        const lease = await ref.acquire({ holder: 'gate-' + Math.random().toString(36).slice(2), ttlMs: 5000 });
+        if (!lease.acquired) return { ok: false, busy: true };
+        const snap = await ref.get();
+        const cur = snap.exists ? snap.data() : null;
+        if (!cur || cur.status !== 'valid') return { ok: false, cur };
+        const patch = { status: 'used', usedAt: new Date().toISOString() };
+        await ref.update(patch);
+        return { ok: true, cur: Object.assign({}, cur, patch) };
+      },
+    };
+  }
+  function setSync(kind, text) {
+    const s = $('sync');
+    s.className = 'sync ' + kind;
+    s.textContent = text;
+  }
+  function onTickets(list) {
+    tickets = new Map(list.filter((t) => t && t.serial).map((t) => [t.serial, t]));
+    renderRegister();
+  }
+
+  /* ---------- signing key ---------- */
+  async function refreshKey() {
+    const has = KEY.length >= 8;
+    $('setup').hidden = has;
+    $('keybar').hidden = !has;
+    if (has) $('kcheck').textContent = await GM.keyCheck(KEY);
+    for (const id of ['issue', 'sample']) $(id).disabled = !has;
+  }
+  $('keysave').addEventListener('click', async () => {
+    const v = $('keyin').value.trim();
+    if (v.length < 8) { $('keyerr').textContent = 'Use at least 8 characters.'; return; }
+    KEY = v; lsSet('gm_key', KEY); $('keyin').value = ''; $('keyerr').textContent = '';
+    await refreshKey(); toast('Signing key saved on this phone.');
+  });
+  $('keychange').addEventListener('click', () => {
+    KEY = ''; lsSet('gm_key', ''); refreshKey();
+  });
+
+  /* ---------- tabs ---------- */
+  function showTab(name) {
+    for (const b of document.querySelectorAll('nav.tabs button')) b.setAttribute('aria-selected', String(b.dataset.tab === name));
+    for (const n of ['issue', 'gate', 'register']) $('view-' + n).hidden = n !== name;
+    if (name === 'gate') $('gatein').focus();
+  }
+  for (const b of document.querySelectorAll('nav.tabs button')) b.addEventListener('click', () => showTab(b.dataset.tab));
+
+  /* ---------- PDF save ---------- */
+  async function savePdf(buf, filename) {
+    if (!downloads) { toast('Saving files is not available in this view.'); return false; }
+    try { await downloads.save({ filename, data: buf }); return true; }
+    catch (e) { if (e && e.code === 'declined') toast('Save cancelled.'); else toast('Could not save the file.'); return false; }
+  }
+  const slug = (s) => String(s).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) || 'guest';
+  const deps = () => ({ jsPDF: window.jspdf.jsPDF, qrcode: window.qrcode });
+
+  /* ---------- issue ---------- */
+  $('form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const err = $('issueerr'); err.textContent = '';
+    const name = $('f-name').value.trim();
+    const phone = $('f-phone').value.trim();
+    const type = $('f-type').value;
+    const qty = Math.max(1, Math.min(10, parseInt($('f-qty').value, 10) || 1));
+    const amount = parseInt($('f-amount').value, 10) || 0;
+    const method = $('f-method').value;
+    const ref = $('f-ref').value.trim().toUpperCase();
+    const venue = $('f-venue').value.trim();
+    if (!name) { err.textContent = 'Enter the guest name.'; return; }
+    if (!ref && method !== 'Cash') { err.textContent = 'Enter the transaction ID from the payment SMS.'; return; }
+    if (ref) {
+      const dup = [...tickets.values()].find((t) => t.ref === ref && t.status !== 'void');
+      if (dup && dupOverride !== ref) {
+        dupOverride = ref;
+        err.textContent = 'This transaction ID already has ticket ' + GM.fmtSerial(dup.serial) + ' for ' + dup.name + '. If a second ticket is correct, press Issue again.';
+        return;
+      }
+    }
+    const btn = $('issue'); btn.disabled = true;
+    try {
+      const batch = [];
+      for (let i = 0; i < qty; i++) {
+        let serial; do { serial = GM.randomSerial(); } while (tickets.has(serial) || batch.some((b) => b.serial === serial));
+        batch.push({ serial, type, name, phone, amount, method, ref, venue, issuedAt: new Date().toISOString(), status: 'valid', usedAt: null, voidedAt: null });
+      }
+      for (const t of batch) { await store.set(t); tickets.set(t.serial, t); }
+      dupOverride = '';
+      const buf = await GM.buildPdf(deps(), batch, KEY);
+      const fname = 'GrooveMode-' + slug(name) + '-' + batch[0].serial + '.pdf';
+      lastPdf = { buf, fname };
+      renderIssued(batch);
+      renderRegister();
+      await savePdf(buf.slice(0), fname);
+    } catch (e) {
+      err.textContent = 'Could not issue the ticket. ' + ((e && e.message) || '');
+    } finally { btn.disabled = KEY.length < 8; }
+  });
+  function renderIssued(batch) {
+    const box = $('issued'); box.replaceChildren();
+    const serials = el('div', { class: 'serials' }, ...batch.map((t) => el('span', { class: 'serial', text: GM.fmtSerial(t.serial) })));
+    box.append(el('div', { class: 'issued' },
+      el('h3', { text: batch.length + (batch.length > 1 ? ' tickets issued' : ' ticket issued') }),
+      el('p', { text: 'Send the PDF to ' + (batch[0].phone || 'the guest') + ' on WhatsApp.' }),
+      serials,
+      el('div', { class: 'row' }, el('button', { class: 'btn small', type: 'button', onclick: () => savePdf(lastPdf.buf.slice(0), lastPdf.fname) }, 'Save PDF again'))));
+    $('f-name').value = ''; $('f-phone').value = ''; $('f-ref').value = ''; $('f-qty').value = '1';
+  }
+  $('sample').addEventListener('click', async () => {
+    const t = { serial: GM.randomSerial(), type: 'V', name: 'Sample Guest', phone: '', amount: 50000, method: 'MTN MoMo', ref: 'SAMPLE0000', venue: '', issuedAt: new Date().toISOString(), sample: true };
+    const buf = await GM.buildPdf(deps(), [t], KEY);
+    await savePdf(buf, 'GrooveMode-SAMPLE.pdf');
+  });
+
+  /* ---------- gate ---------- */
+  function fpEl(serial, type, code) {
+    return GM.sign(KEY, serial, type).then((a) => el('span', { class: 'fp' }, ...GM.fingerprint(a.bytes).map((v) => {
+      const i = el('i'); i.style.background = 'rgb(' + GM.FP_COLORS[v].join(',') + ')'; return i;
+    })));
+  }
+  function showResult(cls, big, facts, actions) {
+    const out = $('gateout'); out.replaceChildren();
+    const dl = el('dl', { class: 'facts' });
+    for (const [k, v, c] of facts) { dl.append(el('dt', { text: k })); dl.append(el('dd', { class: c || '', text: '' }, v)); }
+    const r = el('div', { class: 'result ' + cls, role: 'status' }, el('div', { class: 'big', text: big }), facts.length ? dl : null);
+    if (actions && actions.length) r.append(el('div', { class: 'row' }, ...actions));
+    out.append(r);
+    return r;
+  }
+  function when(iso) { return GM.fmtWhen(iso); }
+  async function check(raw) {
+    const p = GM.parse(raw);
+    if (!p) { showResult('invalid', 'Not a Groove Mode ticket', [['Scanned', String(raw).slice(0, 60)]]); return; }
+    if (!p.manual) {
+      if (KEY.length < 8) { showResult('invalid', 'Set the signing key', [['Why', 'Tickets can only be verified once the key is entered.']]); return; }
+      const expect = await GM.sign(KEY, p.serial, p.type);
+      if (expect.code !== p.sig) {
+        showResult('forged', 'Fake ticket', [['Serial', GM.fmtSerial(p.serial)], ['Reason', 'The security code does not match. Do not admit.']]);
+        return;
+      }
+    }
+    const t = tickets.get(p.serial);
+    if (!t) {
+      showResult(p.manual ? 'unknown' : 'unknown', 'Not in register', [
+        ['Serial', GM.fmtSerial(p.serial)],
+        ['Reason', p.manual ? 'No ticket with this serial in the register.' : 'Signature is genuine but this ticket is not in the register on this phone. Check the shared register is live, then scan again.'],
+      ]);
+      return;
+    }
+    if (!p.manual && t.type !== p.type) {
+      showResult('forged', 'Fake ticket', [['Serial', GM.fmtSerial(p.serial)], ['Reason', 'Ticket type does not match the register.']]);
+      return;
+    }
+    const type = GM.TYPES[t.type];
+    const fp = await fpEl(t.serial, t.type);
+    const facts = [
+      ['Holder', t.name, 'name'],
+      ['Type', type.label + ' · admits ' + type.admits],
+      ['Serial', GM.fmtSerial(t.serial)],
+      ['Fingerprint', fp],
+      ['Paid', (t.amount ? GM.money(t.amount) + ' · ' : '') + t.method + (t.ref ? ' · ' + t.ref : '')],
+    ];
+    if (t.status === 'void') { showResult('void', 'Ticket cancelled', facts.concat([['Cancelled', t.voidedAt ? when(t.voidedAt) : '']])); return; }
+    if (t.status === 'used') { showResult('used', 'Already used', facts.concat([['Entered at', when(t.usedAt)]])); return; }
+    const note = p.manual ? [['Check', 'Typed entry. Match the fingerprint on their ticket and ask for ID.']] : [];
+    const admit = el('button', { class: 'btn', type: 'button', onclick: async (e) => {
+      e.target.disabled = true;
+      try {
+        const res = await store.claim(t.serial);
+        if (res.ok) {
+          tickets.set(t.serial, res.cur); renderRegister();
+          showResult('admitted', 'Admit ' + type.admits, [['Holder', t.name, 'name'], ['Marked used', when(res.cur.usedAt)]]);
+        } else if (res.busy) { toast('Another gate is checking this ticket. Try again.'); e.target.disabled = false; }
+        else { check(raw); }
+      } catch (er) { toast('Could not record entry. Try again.'); e.target.disabled = false; }
+    } }, 'Admit and mark used');
+    showResult('valid', 'Valid ticket', facts.concat(note), [admit]);
+  }
+  $('gateform').addEventListener('submit', (e) => { e.preventDefault(); const v = $('gatein').value; $('gatein').value = ''; if (v.trim()) check(v); $('gatein').focus(); });
+  $('photo').addEventListener('change', async (e) => {
+    const f = e.target.files && e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    try {
+      const bmp = await createImageBitmap(f);
+      const scale = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas'); c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+      const x = c.getContext('2d'); x.drawImage(bmp, 0, 0, c.width, c.height);
+      const d = x.getImageData(0, 0, c.width, c.height);
+      const r = window.jsQR(d.data, d.width, d.height);
+      if (r) check(r.data); else showResult('invalid', 'No QR found', [['Tip', 'Fill the frame with the QR code and hold steady.']]);
+    } catch (er) { toast('Could not read that photo.'); }
+  });
+
+  /* ---------- register ---------- */
+  function renderRegister() {
+    const all = [...tickets.values()].sort((a, b) => (b.issuedAt || '').localeCompare(a.issuedAt || ''));
+    const live = all.filter((t) => t.status !== 'void');
+    const used = live.filter((t) => t.status === 'used').length;
+    const rev = live.reduce((s, t) => s + (t.amount || 0), 0);
+    const stats = $('stats'); stats.replaceChildren();
+    for (const [n, l] of [[live.length, 'Issued'], [used, 'Entered'], [live.length - used, 'Not yet in'], [GM.money(rev).replace('UGX ', ''), 'UGX paid']]) {
+      stats.append(el('div', { class: 'stat' }, el('b', { text: String(n) }), el('span', { text: l })));
+    }
+    const q = $('q').value.trim().toLowerCase();
+    const rows = q ? all.filter((t) => [t.name, t.serial, t.phone, t.ref, GM.fmtSerial(t.serial)].join(' ').toLowerCase().includes(q)) : all;
+    const list = $('list'); list.replaceChildren();
+    $('regnote').replaceChildren();
+    if (store && store.mode === 'local') $('regnote').append(el('div', { class: 'note', text: 'Shared register is off. Tickets are kept only in this browser, so a second phone will not see them. Open this page signed in, with edit access shared to your co-host, to sync.' }));
+    if (!rows.length) { list.append(el('div', { class: 'empty', text: all.length ? 'No ticket matches that search.' : 'No tickets yet. Issue the first one from the Issue tab.' })); return; }
+    for (const t of rows) {
+      const st = t.status || 'valid';
+      const acts = el('div', { class: 'acts' });
+      acts.append(el('button', { class: 'btn ghost small', type: 'button', onclick: async () => {
+        if (KEY.length < 8) { toast('Enter the signing key first.'); return; }
+        const buf = await GM.buildPdf(deps(), [t], KEY);
+        savePdf(buf, 'GrooveMode-' + slug(t.name) + '-' + t.serial + '.pdf');
+      } }, 'PDF'));
+      if (st === 'valid') {
+        let armed = false;
+        const v = el('button', { class: 'btn danger small', type: 'button' }, 'Cancel ticket');
+        v.addEventListener('click', async () => {
+          if (!armed) { armed = true; v.classList.add('armed'); v.textContent = 'Tap again to cancel'; setTimeout(() => { armed = false; v.classList.remove('armed'); v.textContent = 'Cancel ticket'; }, 3500); return; }
+          try { await store.update(t.serial, { status: 'void', voidedAt: new Date().toISOString() }); } catch (e) { toast('Could not cancel.'); }
+        });
+        acts.append(v);
+      }
+      const sub = [GM.TYPES[t.type].label, t.phone, t.ref ? 'Ref ' + t.ref : '', st === 'used' ? 'In ' + when(t.usedAt) : ''].filter(Boolean).join(' · ');
+      list.append(el('div', { class: 't' },
+        el('div', { class: 'who' }, el('b', { text: t.name }), el('small', { text: sub })),
+        el('div', { style: 'text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end' }, el('span', { class: 'sn', text: GM.fmtSerial(t.serial) }), el('span', { class: 'pill ' + st, text: st === 'valid' ? 'Not in yet' : st === 'used' ? 'Entered' : 'Cancelled' })),
+        acts));
+    }
+  }
+  $('q').addEventListener('input', renderRegister);
+  $('csv').addEventListener('click', () => {
+    const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const head = ['Serial', 'Name', 'Phone', 'Type', 'Amount UGX', 'Method', 'Transaction ID', 'Issued', 'Status', 'Entered at'];
+    const lines = [head.map(esc).join(',')];
+    for (const t of [...tickets.values()].sort((a, b) => (a.issuedAt || '').localeCompare(b.issuedAt || ''))) {
+      lines.push([GM.fmtSerial(t.serial), t.name, t.phone, GM.TYPES[t.type].label, t.amount, t.method, t.ref, t.issuedAt, t.status, t.usedAt || ''].map(esc).join(','));
+    }
+    if (!downloads) { toast('Saving files is not available in this view.'); return; }
+    downloads.save({ filename: 'groove-mode-register.csv', data: lines.join('\n') }).catch(() => {});
+  });
+
+  /* ---------- boot ---------- */
+  async function boot() {
+    await refreshKey();
+    renderRegister();
+    try { downloads = window.claude ? await window.claude.use('downloads') : null; } catch (e) { downloads = null; }
+    let db = null;
+    try { db = window.claude ? await window.claude.use('db') : null; } catch (e) { db = null; }
+    const fallback = () => { store = localStore(onTickets); setSync('local', 'This browser only'); renderRegister(); };
+    if (db) {
+      try { store = await dbStore(db, onTickets, fallback); } catch (e) { fallback(); }
+    } else fallback();
+  }
+  boot();
+})();
+
+</script>
+
+</body></html>
